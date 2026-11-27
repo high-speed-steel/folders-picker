@@ -2,11 +2,24 @@
   "name": "trusted-folders-picker",
   "displayName": "Trusted Folders Picker",
   "description": "快速選擇並開啟你信任的各個資料夾",
-  "version": "0.3.1",
-  "publisher": "local",
+  "version": "0.3.2",
+  "publisher": "high-speed-steel",
+  "license": "MIT",
+  "icon": "resources/icon.png",
+  "keywords": [
+    "trusted folders",
+    "workspace trust",
+    "folder picker",
+    "sidebar",
+    "project switcher"
+  ],
+  "homepage": "https://github.com/high-speed-steel/folders-picker#readme",
+  "bugs": {
+    "url": "https://github.com/high-speed-steel/folders-picker/issues"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/high-speed-steel/trusted-folders-picker.git"
+    "url": "https://github.com/high-speed-steel/folders-picker.git"
   },
   "engines": {
     "vscode": "^1.85.0"
