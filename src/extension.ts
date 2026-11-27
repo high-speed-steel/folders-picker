@@ -1,4 +1,4 @@
-import { execFile } from 'child_process';
+import { execFile, spawn } from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -180,42 +180,68 @@ async function queryTrustModelFromDb(dbPath: string): Promise<string | null> {
   }
 }
 
-async function writeTrustModelToDb(dbPath: string, newValue: string): Promise<boolean> {
+function runNodeWithStdin(nodeBin: string, script: string, args: string[], stdinData: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(nodeBin, ['-e', script, ...args], {
+      windowsHide: true,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+
+    let stderr = '';
+    child.stderr.on('data', (chunk) => {
+      stderr += String(chunk);
+    });
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(stderr.trim() || `node exited with code ${code}`));
+      }
+    });
+
+    child.stdin.write(stdinData, 'utf8');
+    child.stdin.end();
+  });
+}
+
+async function writeTrustModelToDb(dbPath: string, newValue: string): Promise<{ ok: boolean; error?: string }> {
   const writeScript = `
+    const fs = require('fs');
     const { DatabaseSync } = require('node:sqlite');
+    const newValue = fs.readFileSync(0, 'utf8');
     const db = new DatabaseSync(process.argv[1]);
     try {
-      db.exec('PRAGMA busy_timeout = 3000');
-      db.prepare("UPDATE ItemTable SET value = ? WHERE key = 'content.trust.model.key'").run(process.argv[2]);
+      db.exec('PRAGMA busy_timeout = 5000');
+      db.prepare("UPDATE ItemTable SET value = ? WHERE key = 'content.trust.model.key'").run(newValue);
     } finally {
       db.close();
     }
   `;
 
+  let lastError = '';
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { DatabaseSync } = require('node:sqlite');
     const db = new DatabaseSync(dbPath);
     try {
-      db.exec('PRAGMA busy_timeout = 3000');
+      db.exec('PRAGMA busy_timeout = 5000');
       db.prepare("UPDATE ItemTable SET value = ? WHERE key = 'content.trust.model.key'").run(newValue);
-      return true;
+      return { ok: true };
     } finally {
       db.close();
     }
-  } catch {
+  } catch (err) {
+    lastError = err instanceof Error ? err.message : String(err);
     for (const nodeBin of getNodeCandidates()) {
       try {
-        await execFileAsync(nodeBin, ['-e', writeScript, dbPath, newValue], {
-          timeout: 4000,
-          windowsHide: true,
-        });
-        return true;
-      } catch {
-        // 嘗試下一個候選路徑
+        await runNodeWithStdin(nodeBin, writeScript, [dbPath], newValue);
+        return { ok: true };
+      } catch (spawnErr) {
+        lastError = spawnErr instanceof Error ? spawnErr.message : String(spawnErr);
       }
     }
-    return false;
+    return { ok: false, error: lastError };
   }
 }
 
@@ -313,9 +339,11 @@ async function removeFromVsCodeTrustedDbs(targetPath: string): Promise<boolean> 
       }
 
       if (changed) {
-        const ok = await writeTrustModelToDb(dbPath, JSON.stringify(parsed));
-        if (ok) {
+        const res = await writeTrustModelToDb(dbPath, JSON.stringify(parsed));
+        if (res.ok) {
           removedAny = true;
+        } else if (res.error) {
+          vscode.window.showErrorMessage(`寫入 VS Code 信任資料庫失敗：${res.error}`);
         }
       }
     } catch {
@@ -634,7 +662,7 @@ class TrustedFoldersViewProvider implements vscode.WebviewViewProvider {
             const label = msg.name || path.basename(msg.path);
             const confirm = await vscode.window.showWarningMessage(
               `確定要刪除「${label}」嗎？這將同時從 VS Code 信任清單移除。`,
-              { modal: false },
+              { modal: true },
               '刪除'
             );
             if (confirm === '刪除') {
@@ -642,6 +670,8 @@ class TrustedFoldersViewProvider implements vscode.WebviewViewProvider {
               await this.refresh();
               if (removed) {
                 vscode.window.setStatusBarMessage(`已移除信任：${label}`, 3000);
+              } else {
+                vscode.window.showWarningMessage(`找不到可移除的紀錄：${label}`);
               }
             }
           }

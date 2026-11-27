@@ -2,7 +2,7 @@
   "name": "trusted-folders-picker",
   "displayName": "Trusted Folders Picker",
   "description": "快速選擇並開啟你信任的各個資料夾",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "local",
   "repository": {
     "type": "git",
