@@ -1,0 +1,90 @@
+{
+  "name": "trusted-folders-picker",
+  "displayName": "Trusted Folders Picker",
+  "description": "快速選擇並開啟你信任的各個資料夾",
+  "version": "0.1.0",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "trustedFoldersPicker.pick",
+        "title": "Trusted Folders: 快速選擇資料夾"
+      },
+      {
+        "command": "trustedFoldersPicker.addCurrent",
+        "title": "Trusted Folders: 將目前資料夾加入清單"
+      },
+      {
+        "command": "trustedFoldersPicker.addFolder",
+        "title": "Trusted Folders: 瀏覽並加入資料夾"
+      },
+      {
+        "command": "trustedFoldersPicker.removeFolder",
+        "title": "Trusted Folders: 從清單移除資料夾"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "trustedFoldersPicker.pick",
+        "key": "ctrl+alt+t",
+        "mac": "cmd+alt+t"
+      }
+    ],
+    "configuration": {
+      "title": "Trusted Folders Picker",
+      "properties": {
+        "trustedFoldersPicker.folders": {
+          "type": "array",
+          "default": [],
+          "description": "你信任並想快速開啟的資料夾路徑清單（支援字串路徑或 { name, path } 物件）",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "資料夾顯示名稱（選填）"
+                  },
+                  "path": {
+                    "type": "string",
+                    "description": "資料夾完整路徑"
+                  }
+                },
+                "required": ["path"]
+              }
+            ]
+          }
+        },
+        "trustedFoldersPicker.openInNewWindow": {
+          "type": "boolean",
+          "default": false,
+          "description": "選擇資料夾時是否預設在新視窗開啟"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0"
+  }
+}
