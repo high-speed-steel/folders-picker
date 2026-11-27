@@ -2,8 +2,12 @@
   "name": "trusted-folders-picker",
   "displayName": "Trusted Folders Picker",
   "description": "快速選擇並開啟你信任的各個資料夾",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "publisher": "local",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/high-speed-steel/trusted-folders-picker.git"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -15,6 +19,24 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "trustedFoldersExplorer",
+          "title": "信任資料夾",
+          "icon": "resources/shield-folder.svg"
+        }
+      ]
+    },
+    "views": {
+      "trustedFoldersExplorer": [
+        {
+          "type": "webview",
+          "id": "trustedFoldersView",
+          "name": "信任資料夾"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "trustedFoldersPicker.pick",
@@ -26,13 +48,33 @@
       },
       {
         "command": "trustedFoldersPicker.addFolder",
-        "title": "Trusted Folders: 瀏覽並加入資料夾"
+        "title": "Trusted Folders: 瀏覽並加入資料夾",
+        "icon": "$(add)"
       },
       {
         "command": "trustedFoldersPicker.removeFolder",
         "title": "Trusted Folders: 從清單移除資料夾"
+      },
+      {
+        "command": "trustedFoldersPicker.refresh",
+        "title": "重新整理",
+        "icon": "$(refresh)"
       }
     ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "trustedFoldersPicker.addFolder",
+          "when": "view == trustedFoldersView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "trustedFoldersPicker.refresh",
+          "when": "view == trustedFoldersView",
+          "group": "navigation@2"
+        }
+      ]
+    },
     "keybindings": [
       {
         "command": "trustedFoldersPicker.pick",
